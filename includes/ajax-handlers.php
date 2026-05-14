@@ -160,7 +160,7 @@ add_action('wp_ajax_wp_ai_recipe_generator_test_connection', function() {
             absint($response_code),
             esc_html($response_body)
         );
-        wp_send_json_error(esc_html($response->get_error_message()));
+        wp_send_json_error($error_message);
     }
 });
 
@@ -555,23 +555,26 @@ add_action('wp_ajax_wp_ai_recipe_generator_get_dietary_options', function() {
 });
 
 // Standalone helper functions
-function wp_ai_recipe_generator_handle_frontend_request() {
+function wp_ai_recipe_generator_handle_frontend_request()
+{
     check_ajax_referer('wp_ai_recipe_generator_frontend_nonce', '_wpnonce');
 
-    if (!is_user_logged_in()) {
-        wp_send_json_error(esc_html__('Authentication required.', 'wpai-recipe-generator'));
+    // Check if user can generate based on admin setting
+    if (!WPAI_Recipe_Generator::user_can_generate_recipe()) {
+        wp_send_json_error(esc_html__('Please log in or register to generate recipes.', 'wpai-recipe-generator'));
+        return;
     }
-    
+
     $args = [
         'servings' => !empty($_POST['servings']) ? absint($_POST['servings']) : 4,
         'include_ingredients' => !empty($_POST['include']) ? sanitize_text_field(wp_unslash($_POST['include'])) : '',
         'exclude_ingredients' => !empty($_POST['exclude']) ? sanitize_text_field(wp_unslash($_POST['exclude'])) : '',
         'dietary' => !empty($_POST['dietary']) ? array_map('sanitize_key', $_POST['dietary']) : []
     ];
-    
+
     $api_handler = WPAI_Recipe_Generator_API_Handler::get_instance();
     $result = $api_handler->handle_prompt_request($args);
-    
+
     if (is_wp_error($result)) {
         wp_send_json_error($result->get_error_message());
     }

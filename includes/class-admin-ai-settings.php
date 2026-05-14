@@ -1,10 +1,12 @@
 <?php
-class WPAI_Recipe_Generator_Admin_AI_Settings {
+class WPAI_Recipe_Generator_Admin_AI_Settings
+{
     private $providers;
     private $api_key_option;
     private $technical_params;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->api_key_option = 'WPAI_recipe_generator_api_key';
         $this->providers = WPAI_Recipe_Generator_Providers::get_instance();
 
@@ -41,7 +43,7 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                 'default' => 0
             ]
         ];
-        
+
         add_action('admin_menu', array($this, 'add_submenu_page'));
         add_action('admin_init', array($this, 'handle_submissions'));
         add_action('admin_init', array($this, 'register_settings'));
@@ -49,7 +51,8 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_assets'));
     }
 
-    public function enqueue_assets($hook) {
+    public function enqueue_assets($hook)
+    {
         // if ('toplevel_page_wpai-recipe-generator' !== $hook && 'wpai-recipe-generator_page_wpai-recipe-generator-ai-settings' !== $hook) {
         //     return;
         // }
@@ -59,7 +62,8 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
         $plugin->enqueue_admin_assets($hook);
     }
 
-    public function add_submenu_page() {
+    public function add_submenu_page()
+    {
         add_submenu_page(
             'wpai-recipe-generator',
             __('AI Settings', 'wpai-recipe-generator'),
@@ -70,7 +74,8 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
         );
     }
 
-    public function register_settings() {
+    public function register_settings()
+    {
         register_setting(
             'WPAI_recipe_generator_ai_settings',
             'WPAI_recipe_generator_api_key',
@@ -78,14 +83,15 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
         );
     }
 
-    public function register_technical_settings() {
+    public function register_technical_settings()
+    {
         foreach ($this->technical_params as $param => $attributes) {
             register_setting(
                 'WPAI_recipe_generator_ai_settings',
                 "WPAI_recipe_generator_{$param}",
                 [
                     'type' => 'number',
-                    'sanitize_callback' => function($value) use ($param) {
+                    'sanitize_callback' => function ($value) use ($param) {
                         return $this->sanitize_technical_param_single($value, $param);
                     },
                     'default' => $attributes['default']
@@ -94,7 +100,8 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
         }
     }
 
-    private function sanitize_technical_param_single($value, $param) {
+    private function sanitize_technical_param_single($value, $param)
+    {
         if (!isset($this->technical_params[$param])) {
             return $value;
         }
@@ -106,11 +113,12 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
         return max($min, min($max, round($value, 2)));
     }
 
-    public function sanitize_technical_param($value) {
+    public function sanitize_technical_param($value)
+    {
         // Get the option name from the current filter
         $option_name = str_replace('sanitize_option_', '', current_filter());
         $param = str_replace('WPAI_recipe_generator_', '', $option_name);
-        
+
         if (!isset($this->technical_params[$param])) {
             return $value;
         }
@@ -122,31 +130,16 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
         // Clamp the value between min and max
         return max($min, min($max, round($value, 2)));
     }
-    
-    // public function sanitize_api_key($input) {
-    //     $input = trim($input);
-    //     if (!empty($input)) {
-    //         if (!preg_match('/^[a-zA-Z0-9\-_]+$/', $input)) {
-    //             add_settings_error(
-    //                 $this->api_key_option,
-    //                 'invalid_api_key',
-    //                 __('Invalid API key format', 'wpai-recipe-generator'),
-    //                 'error'
-    //             );
-    //             return '';
-    //         }
-    //     }
-    //     return $input;
-    // }
 
-    public function sanitize_api_key($input) {
+    public function sanitize_api_key($input)
+    {
         $input = trim($input);
-        
+
         // If input is empty, return the existing value (don't overwrite with empty)
         if (empty($input)) {
             return get_option('WPAI_recipe_generator_api_key', '');
         }
-        
+
         // Validate the key format if it's not empty
         if (!preg_match('/^[a-zA-Z0-9\-_]+$/', $input)) {
             add_settings_error(
@@ -157,33 +150,34 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
             );
             return get_option('WPAI_recipe_generator_api_key', ''); // Return existing key on error
         }
-        
+
         return $input;
     }
 
-    public function render_page() {
+    public function render_page()
+    {
         if (!current_user_can('manage_options')) {
             wp_die(esc_html__('You do not have sufficient permissions.', 'wpai-recipe-generator'));
         }
-        
+
         $selected_provider = get_option('WPAI_recipe_generator_selected_provider', '');
         $api_key = get_option($this->api_key_option, '');
         $providers = $this->providers->get_providers();
-        ?>
-        
+?>
+
         <div class="wrap wpai-recipe-generator-settings">
             <h1><?php esc_html_e('AI Settings', 'wpai-recipe-generator'); ?></h1>
             <p><strong>Set up your API, Technical Parameters, Prompt, User Options, and Testing...</strong></p>
-            
+
             <?php settings_errors('WPAI_recipe_generator_messages'); ?>
-            
+
             <form method="post" action="options.php">
-                <?php 
+                <?php
                 settings_fields('WPAI_recipe_generator_ai_settings');
-                ?>                
+                ?>
                 <div class="settings-section">
                     <h2 class="title"><?php esc_html_e('API Configuration', 'wpai-recipe-generator'); ?></h2>
-                    
+
                     <table class="form-table">
                         <tbody>
                             <!-- API Key Field -->
@@ -194,19 +188,19 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                                     </label>
                                 </th>
                                 <td>
-                                    <input type="password" 
-                                        name="<?php echo esc_attr($this->api_key_option); ?>" 
-                                        id="<?php echo esc_attr($this->api_key_option); ?>" 
-                                        value="<?php echo esc_attr($this->get_display_api_key($api_key)); ?>" 
-                                        class="regular-text" 
-                                        autocomplete="off" 
+                                    <input type="password"
+                                        name="<?php echo esc_attr($this->api_key_option); ?>"
+                                        id="<?php echo esc_attr($this->api_key_option); ?>"
+                                        value="<?php echo esc_attr($this->get_display_api_key($api_key)); ?>"
+                                        class="regular-text"
+                                        autocomplete="off"
                                         placeholder="<?php esc_attr_e('Enter your API key', 'wpai-recipe-generator'); ?>">
                                     <p class="description">
                                         <?php esc_html_e('Your secure API key for the selected provider', 'wpai-recipe-generator'); ?>
                                     </p>
                                 </td>
                             </tr>
-                            
+
                             <!-- Provider Selection -->
                             <tr>
                                 <th scope="row">
@@ -225,24 +219,24 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                                     </select>
                                 </td>
                             </tr>
-                            
+
                             <!-- Add New Provider -->
                             <tr>
-                            <th scope="row">
-                                <label for="new_provider">
-                                    <?php esc_html_e('Add New Provider', 'wpai-recipe-generator'); ?>
-                                </label>
-                            </th>
-                            <td>
-                                <input type="text" 
-                                    name="new_provider" 
-                                    id="new_provider" 
-                                    class="regular-text" 
-                                    placeholder="<?php esc_attr_e('Enter new provider name', 'wpai-recipe-generator'); ?>">
-                                <p class="description">
-                                    <?php esc_html_e('Add a new LLM API provider', 'wpai-recipe-generator'); ?>
-                                </p>
-                            </td>
+                                <th scope="row">
+                                    <label for="new_provider">
+                                        <?php esc_html_e('Add New Provider', 'wpai-recipe-generator'); ?>
+                                    </label>
+                                </th>
+                                <td>
+                                    <input type="text"
+                                        name="new_provider"
+                                        id="new_provider"
+                                        class="regular-text"
+                                        placeholder="<?php esc_attr_e('Enter new provider name', 'wpai-recipe-generator'); ?>">
+                                    <p class="description">
+                                        <?php esc_html_e('Add a new LLM API provider', 'wpai-recipe-generator'); ?>
+                                    </p>
+                                </td>
                             </tr>
 
                             <!-- Add New Provider URL Endpoint-->
@@ -253,10 +247,10 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                                     </label>
                                 </th>
                                 <td>
-                                    <input type="url" 
-                                        id="new_provider_endpoint" 
-                                        name="new_provider_endpoint" 
-                                        class="regular-text" 
+                                    <input type="url"
+                                        id="new_provider_endpoint"
+                                        name="new_provider_endpoint"
+                                        class="regular-text"
                                         placeholder="<?php esc_attr_e('https://api.example.com/v1/endpoint', 'wpai-recipe-generator'); ?>"
                                         pattern="https?://.+">
                                     <p class="description">
@@ -270,10 +264,10 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                                     <h4><?php esc_html_e('Connection Test', 'wpai-recipe-generator'); ?></h4>
                                 </th>
                                 <td>
-                                    <button type="button" 
-                                            id="test-api-connection" 
-                                            class="button button-secondary"
-                                            data-nonce="<?php echo esc_attr(wp_create_nonce('wp_ai_recipe_generator_test_connection')); ?>">
+                                    <button type="button"
+                                        id="test-api-connection"
+                                        class="button button-secondary"
+                                        data-nonce="<?php echo esc_attr(wp_create_nonce('wp_ai_recipe_generator_test_connection')); ?>">
                                         <?php esc_html_e('Test API Connection', 'wpai-recipe-generator'); ?>
                                     </button>
                                     <span id="test-connection-result" style="margin-left:10px;"></span>
@@ -285,14 +279,47 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                         </tbody>
                     </table>
                 </div>
-                
+
+                <!-- User Access Control Section -->
+                <div class="settings-section">
+                    <h2 class="title"><?php esc_html_e('User Access Control', 'wpai-recipe-generator'); ?></h2>
+                    <table class="form-table">
+                        <tbody>
+                            <tr>
+                                <th scope="row">
+                                    <label for="wpai_require_login">
+                                        <?php esc_html_e('Recipe Generator Access', 'wpai-recipe-generator'); ?>
+                                    </label>
+                                </th>
+                                <td>
+                                    <?php
+                                    $require_login = get_option('wpai_require_login', true);
+                                    ?>
+                                    <label>
+                                        <input type="checkbox"
+                                            name="wpai_require_login"
+                                            id="wpai_require_login"
+                                            value="1"
+                                            <?php checked(1, $require_login, true); ?> />
+                                        <?php esc_html_e('Require user registration/login to generate recipes', 'wpai-recipe-generator'); ?>
+                                    </label>
+                                    <p class="description">
+                                        <?php esc_html_e('When enabled (checked), only logged-in registered users can generate recipes.', 'wpai-recipe-generator'); ?>
+                                    </p>
+                                    <input type="hidden" name="wpai_require_login_submitted" value="1" />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <div class="settings-section">
                     <h2 class="title"><?php esc_html_e('Technical Parameters', 'wpai-recipe-generator'); ?></h2>
                     <table class="form-table">
                         <tbody>
-                            <?php foreach ($this->technical_params as $param => $attributes) : 
+                            <?php foreach ($this->technical_params as $param => $attributes) :
                                 $current_value = get_option("WPAI_recipe_generator_{$param}", $attributes['default']);
-                                ?>
+                            ?>
                                 <tr>
                                     <th scope="row">
                                         <label for="WPAI_recipe_generator_<?php echo esc_attr($param); ?>">
@@ -300,14 +327,14 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                                         </label>
                                     </th>
                                     <td>
-                                        <input type="range" 
-                                            name="WPAI_recipe_generator_<?php echo esc_attr($param); ?>" 
-                                            id="WPAI_recipe_generator_<?php echo esc_attr($param); ?>" 
-                                            min="<?php echo esc_attr($attributes['min']); ?>" 
-                                            max="<?php echo esc_attr($attributes['max']); ?>" 
-                                            step="<?php echo esc_attr($attributes['step']); ?>" 
-                                            value="<?php echo esc_attr($current_value); ?>" 
-                                            class="technical-param-slider" 
+                                        <input type="range"
+                                            name="WPAI_recipe_generator_<?php echo esc_attr($param); ?>"
+                                            id="WPAI_recipe_generator_<?php echo esc_attr($param); ?>"
+                                            min="<?php echo esc_attr($attributes['min']); ?>"
+                                            max="<?php echo esc_attr($attributes['max']); ?>"
+                                            step="<?php echo esc_attr($attributes['step']); ?>"
+                                            value="<?php echo esc_attr($current_value); ?>"
+                                            class="technical-param-slider"
                                             oninput="document.getElementById('WPAI_recipe_generator_<?php echo esc_attr($param); ?>_value').value=this.value">
                                         <output id="WPAI_recipe_generator_<?php echo esc_attr($param); ?>_value">
                                             <?php echo esc_html($current_value); ?>
@@ -321,26 +348,27 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                         </tbody>
                     </table>
                 </div>
-                
-                <?php 
+
+                <?php
                 $this->render_prompt_editor();
                 $this->render_dietary_options_editor();
                 $this->render_test_interface();
                 ?>
-                
+
                 <div class="submit-section">
                     <?php submit_button(__('Save All Settings', 'wpai-recipe-generator')); ?>
                     <p><strong>ANY</strong> changes made to API or Technical Parameters <strong>MUST</strong> be saved using this <strong>"Save All Settings"</strong> button.</p>
                 </div>
             </form>
         </div>
-        <?php
+    <?php
     }
 
-    private function render_prompt_editor() {
+    private function render_prompt_editor()
+    {
         $prompt_manager = WPAI_Recipe_Generator_Prompt_Manager::get_instance();
         $current_prompt = $prompt_manager->get_prompt_template();
-        ?>
+    ?>
         <div class="settings-section">
             <h2 class="title"><?php esc_html_e('Prompt Editor', 'wpai-recipe-generator'); ?></h2>
             <p><strong>This prompt has been fully tested as providing the most efficient response whilst adhering to all set paramaters and user selections.</strong></p>
@@ -356,7 +384,7 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                             </textarea>
                             <p class="description">
                                 <?php esc_html_e('Available placeholders: {cuisine}, {dietary}, {include_ingredients}, {exclude_ingredients}, {servings}, {skill_level}, {creativity_level}', 'wpai-recipe-generator'); ?>
-                                <p><strong>Editing the prompt will directly affect the response - The provided {placeholders} MUST be included to align with frontend user selections.</strong></p>
+                            <p><strong>Editing the prompt will directly affect the response - The provided {placeholders} MUST be included to align with frontend user selections.</strong></p>
                             </p>
                         </td>
                     </tr>
@@ -372,14 +400,15 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                 </tbody>
             </table>
         </div>
-        <?php
+    <?php
     }
 
-    private function render_dietary_options_editor() {
+    private function render_dietary_options_editor()
+    {
         $prompt_manager = WPAI_Recipe_Generator_Prompt_Manager::get_instance();
         $dietary_options = $prompt_manager->get_dietary_options();
-        
-        ?>
+
+    ?>
         <div class="settings-section">
             <h2 class="title"><?php esc_html_e('Dietary Options', 'wpai-recipe-generator'); ?></h2>
             <p>These options are rendered on the frontend form as "User Selections". <i>(Adding to, or removing these will update the user selections automatically.)</i></p>
@@ -405,33 +434,33 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                             <label for="new_dietary_option"><?php esc_html_e('Add New Option', 'wpai-recipe-generator'); ?></label>
                         </th>
                         <td class="new-diet-options">
-                            <input type="text" 
-                                id="new_dietary_option" 
-                                name="new_dietary_option" 
-                                class="regular-text" 
-                                placeholder="<?php esc_attr_e('e.g., Paleo', 'wpai-recipe-generator'); ?>"
-                            >
+                            <input type="text"
+                                id="new_dietary_option"
+                                name="new_dietary_option"
+                                class="regular-text"
+                                placeholder="<?php esc_attr_e('e.g., Paleo', 'wpai-recipe-generator'); ?>">
                             <div class="btn-grp">
                                 <button type="button" id="add-dietary-option" class="button button-primary">
-                                <?php esc_html_e('Add', 'wpai-recipe-generator'); ?>
+                                    <?php esc_html_e('Add', 'wpai-recipe-generator'); ?>
                                 </button>
                                 <button type="button" id="reset-dietary-options" class="button button-secondary">
                                     <?php esc_html_e('Reset to Default', 'wpai-recipe-generator'); ?>
                                 </button>
                             </div>
-                                
+
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        
-        <?php
+
+    <?php
     }
 
-    private function render_test_interface() {
+    private function render_test_interface()
+    {
         $dietary_options = WPAI_Recipe_Generator_Prompt_Manager::get_instance()->get_dietary_options();
-        ?>
+    ?>
         <div class="settings-section">
             <h2 class="title"><?php esc_html_e('Test Prompt & Response', 'wpai-recipe-generator'); ?></h2>
             <div id="prompt-test-interface">
@@ -442,41 +471,41 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                                 <label for="test_servings"><?php esc_html_e('Servings', 'wpai-recipe-generator'); ?></label>
                             </th>
                             <td>
-                                <input type="number" 
-                                    id="test_servings" 
-                                    name="test_servings" 
-                                    min="1" 
-                                    max="20" 
+                                <input type="number"
+                                    id="test_servings"
+                                    name="test_servings"
+                                    min="1"
+                                    max="20"
                                     value="4">
                             </td>
                         </tr>
-                        
+
                         <tr>
                             <th scope="row">
                                 <label for="test_include"><?php esc_html_e('Must Include', 'wpai-recipe-generator'); ?></label>
                             </th>
                             <td>
-                                <input type="text" 
-                                    id="test_include" 
-                                    name="test_include" 
-                                    class="regular-text" 
+                                <input type="text"
+                                    id="test_include"
+                                    name="test_include"
+                                    class="regular-text"
                                     placeholder="<?php esc_attr_e('Comma separated list', 'wpai-recipe-generator'); ?>">
                             </td>
                         </tr>
-                        
+
                         <tr>
                             <th scope="row">
                                 <label for="test_exclude"><?php esc_html_e('Must Exclude', 'wpai-recipe-generator'); ?></label>
                             </th>
                             <td>
-                                <input type="text" 
-                                    id="test_exclude" 
-                                    name="test_exclude" 
-                                    class="regular-text" 
+                                <input type="text"
+                                    id="test_exclude"
+                                    name="test_exclude"
+                                    class="regular-text"
                                     placeholder="<?php esc_attr_e('Comma separated list', 'wpai-recipe-generator'); ?>">
                             </td>
                         </tr>
-                        
+
                         <tr>
                             <th scope="row">
                                 <label><?php esc_html_e('Dietary Requirements', 'wpai-recipe-generator'); ?></label>
@@ -484,8 +513,8 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                             <td class="diet-options-wrapper">
                                 <?php foreach ($dietary_options as $key => $label) : ?>
                                     <label>
-                                        <input type="checkbox" 
-                                            name="test_dietary[]" 
+                                        <input type="checkbox"
+                                            name="test_dietary[]"
                                             value="<?php echo esc_attr($key); ?>">
                                         <?php echo esc_html($label); ?>
                                     </label><br>
@@ -494,38 +523,73 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
                         </tr>
                     </tbody>
                 </table>
-                
+
                 <div id="test-prompt-container">
-                    <button type="button" 
-                            id="test-prompt" 
-                            class="button button-primary">
+                    <button type="button"
+                        id="test-prompt"
+                        class="button button-primary">
                         <?php esc_html_e('Test Prompt', 'wpai-recipe-generator'); ?>
                     </button>
                     <div class="loading-bar"></div>
                 </div>
-                
+
                 <div id="test-results" style="margin-top:20px; display:none;">
                     <h3><?php esc_html_e('Generated Prompt:', 'wpai-recipe-generator'); ?></h3>
-                    <div id="generated-prompt" 
-                        class="code" 
+                    <div id="generated-prompt"
+                        class="code"
                         style="background:#f5f5f5; padding:10px; border:1px solid #ddd;"></div>
-                    
+
                     <h3 style="margin-top:15px;"><?php esc_html_e('API Response:', 'wpai-recipe-generator'); ?></h3>
-                    <div id="api-response" 
+                    <div id="api-response"
                         style="background:#f5f5f5; padding:10px; border:1px solid #ddd;"></div>
                 </div>
             </div>
         </div>
-        
-        <?php
+
+<?php
     }
 
-    private function get_display_api_key($key) {
+    /**
+     * Directly save the login requirement setting
+     * This bypasses WordPress settings API to ensure it works
+     */
+    private function save_login_requirement_directly()
+    {
+        if (isset($_POST['option_page']) && $_POST['option_page'] === 'WPAI_recipe_generator_ai_settings') {
+
+            // DEBUG: Log everything from the form
+            error_log('=== ALL POST DATA ===');
+            error_log(print_r($_POST, true));
+
+            // Check if the checkbox exists in POST
+            if (isset($_POST['wpai_require_login'])) {
+                error_log('Checkbox IS present in POST. Value: ' . $_POST['wpai_require_login']);
+                $new_value = 1;
+            } else {
+                error_log('Checkbox is NOT present in POST (unchecked)');
+                $new_value = 0;
+            }
+
+            update_option('wpai_require_login', $new_value);
+            error_log('WPAI: Login requirement saved directly - New value: ' . $new_value);
+        }
+    }
+
+    private function get_display_api_key($key)
+    {
         return empty($key) ? '' : '••••••••••••••••';
     }
 
-    public function handle_submissions() {
-        
+    public function handle_submissions()
+    {
+        // SAVE LOGIN REQUIREMENT FIRST - Before any other processing
+        $this->save_login_requirement_directly();
+
+        // The rest of your existing code...
+        if (!isset($_POST['option_page']) || sanitize_text_field(wp_unslash($_POST['option_page'])) !== 'WPAI_recipe_generator_ai_settings') {
+            return;
+        }
+
         if (!isset($_POST['option_page']) || sanitize_text_field(wp_unslash($_POST['option_page'])) !== 'WPAI_recipe_generator_ai_settings') {
             return;
         }
@@ -533,7 +597,7 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
         if (!isset($_POST['_wpnonce'])) {
             wp_die(esc_html__('Security check failed', 'wpai-recipe-generator'));
         }
-        
+
         $nonce = sanitize_text_field(wp_unslash($_POST['_wpnonce']));
         if (!wp_verify_nonce($nonce, 'WPAI_recipe_generator_ai_settings-options')) {
             wp_die(esc_html__('Security check failed', 'wpai-recipe-generator'));
@@ -557,11 +621,17 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
             }
         }
 
+        // Handle login requirement setting
+        // if (isset($_POST['wpai_require_login_submitted'])) {
+        //     $require_login = isset($_POST['wpai_require_login']) && $_POST['wpai_require_login'] === '1';
+        //     update_option('wpai_require_login', $require_login);
+        // }
+
         // Handle new provider addition
         $new_provider = isset($_POST['new_provider']) ? sanitize_text_field(wp_unslash($_POST['new_provider'])) : '';
         if (!empty($new_provider)) {
             $endpoint = isset($_POST['new_provider_endpoint']) ? esc_url_raw(wp_unslash($_POST['new_provider_endpoint'])) : '';
-            
+
             if (empty($endpoint)) {
                 add_settings_error(
                     'WPAI_recipe_generator_messages',
@@ -573,12 +643,12 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
             }
 
             $result = $this->providers->add_provider($new_provider, $endpoint);
-            
+
             if (is_wp_error($result)) {
                 add_settings_error(
-                    'WPAI_recipe_generator_messages', 
-                    'WPAI_recipe_generator_message', 
-                    esc_html($result->get_error_message()), 
+                    'WPAI_recipe_generator_messages',
+                    'WPAI_recipe_generator_message',
+                    esc_html($result->get_error_message()),
                     'error'
                 );
             } else {
@@ -596,17 +666,21 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
             $new_prompt = wp_kses_post(wp_unslash($_POST['WPAI_recipe_generator_prompt']));
             $prompt_manager = WPAI_Recipe_Generator_Prompt_Manager::get_instance();
             $prompt_manager->update_prompt_template($new_prompt);
-            
+        }
+
+        // Show success message (once, for any settings saved)
+        if (isset($_POST['option_page']) && $_POST['option_page'] === 'WPAI_recipe_generator_ai_settings') {
             add_settings_error(
                 'WPAI_recipe_generator_messages',
                 'WPAI_recipe_generator_message',
-                __('Settings updated successfully!', 'wpai-recipe-generator'),
+                __('Settings saved successfully!', 'wpai-recipe-generator'),
                 'success'
             );
         }
     }
 
-    private function get_param_description($param) {
+    private function get_param_description($param)
+    {
         $descriptions = [
             'temperature' => __('0 = predictable, 2 = creative', 'wpai-recipe-generator'),
             'max_tokens' => __('Maximum token usage', 'wpai-recipe-generator'),
@@ -614,7 +688,7 @@ class WPAI_Recipe_Generator_Admin_AI_Settings {
             'frequency_penalty' => __('Penalizes frequently used tokens', 'wpai-recipe-generator'),
             'presence_penalty' => __('Penalizes new tokens appearing in text', 'wpai-recipe-generator')
         ];
-        
+
         return $descriptions[$param] ?? '';
     }
 }

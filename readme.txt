@@ -4,7 +4,7 @@ Donate link: https://jamesdennis.org
 Tags: AI, AI Recipes, Recipes
 Requires at least: 6.7
 Tested up to: 6.8
-Stable tag: 1.2.1
+Stable tag: 1.3.0
 License: GPL v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -19,6 +19,7 @@ Perfect for bloggers, chefs, and content creators.
 ✨ Smart Customization: Specify ingredients to include/exclude, dietary needs, and serving sizes—AI crafts the perfect recipe.  
 ✨ SEO-Ready: Auto-generated Schema.org markup ensures your recipes rank higher and display beautifully in search results.  
 ✨ User Engagement: Built-in save/print/share functionality keeps visitors coming back.  
+✨ Flexible Access Control: Choose whether guests can generate recipes or require user registration.
 
 ** Perfect For: **  
 ✨ Food bloggers who want endless content ideas  
@@ -29,28 +30,32 @@ Perfect for bloggers, chefs, and content creators.
 = Key Features =
 
 - ✨ AI-Generated Recipes: Create endless recipes with custom serving sizes, dietary filters (vegan, gluten-free, etc.), and ingredient constraints.  
-- ✨ Built-in Schema Markup: Automatic JSON-LD structured data boosts SEO and helps your recipes appear in rich search results (Google’s "Recipe" carousel).  
+- ✨ Built-in Schema Markup: Automatic JSON-LD structured data boosts SEO and helps your recipes appear in rich search results (Google's "Recipe" carousel).  
 - ✨ User-Friendly Shortcodes: Embed recipe forms, saved recipe lists, or login prompts anywhere with simple shortcodes.  
 - ✨ Print & Share Tools: Let visitors print recipes or share them on social media—no extra plugins needed!  
 - ✨ Customizable Templates: Match your brand with adjustable templates for recipes, categories, and tags.  
 - ✨ Saved Favorites: Users can save recipes to their accounts, increasing engagement.
+- ✨ Flexible Access Control: Admin setting to toggle between guest access or registered-user-only generation.
 
 == Installation ==
 
 1. Upload the `wpai-recipe-generator` folder to `/wp-content/plugins/`.  
 2. Activate the plugin through **Plugins > Installed Plugins**.  
-3. Navigate to **Recipe Generator > Settings** to configure your API keys and preferences.
+3. Navigate to **Recipe Generator > AI Settings** to configure your API keys and access preferences.
 
 == Frequently Asked Questions ==
 
 ** Q: Do I need an AI API key? **  
-A: Yes! The plugin supports OpenAI, Anthropic, and more. Enter your key in the settings.  
+A: Yes! The plugin supports OpenAI, Anthropic, Deepseek, Google AI, and more. Enter your key in the AI Settings page.  
 
 ** Q: Can I edit generated recipes? **  
-A: Absolutely—recipes are saved as WordPress posts for full customization.  
+A: Absolutely—recipes can be saved as WordPress posts for full customization.  
 
 ** Q: Does this work with my theme? **  
-A: Yes! Shortcodes work in any theme, and templates are style-agnostic. 
+A: Yes! Shortcodes work in any theme, and templates are style-agnostic.
+
+** Q: Can guests generate recipes without logging in? **  
+A: Yes! The plugin includes an admin setting in AI Settings → User Access Control to toggle between guest access and registered-user-only generation.
 
 == Screenshots ==
 
@@ -58,16 +63,26 @@ A: Yes! Shortcodes work in any theme, and templates are style-agnostic.
 2. Beautifully formatted recipe with schema markup.  
 3. Saved recipe modal.
 4. Generated recipe UI.
+5. User Access Control settings panel.
 
 == Changelog ==
+
+= 1.3.0 =
+* **New Feature**: Admin toggle for guest/registered-only access to recipe generator
+* **Enhancement**: Added User Access Control section in AI Settings
+* **Enhancement**: Improved AJAX handler for guest access support
+* **Fix**: Resolved duplicate settings section in admin interface
+* **Fix**: Corrected connection test error handling for non-200 responses
 
 = 1.2.1 =
 * Initial release with AI generation, schema markup, and shortcodes.
 * Responsive design implementation
 * Shortcode integration
 
-== Upgrade Notice ==  
-N/A (First release)
+== Upgrade Notice ==
+
+= 1.3.0 =
+Adds flexible access control - choose whether guests can generate recipes or require user registration. Recommended update for all users.
 
 == Support ==
 Visit jamesdennis.org for further details and inquiries about the Recipe Generator plugin.

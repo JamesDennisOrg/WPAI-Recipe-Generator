@@ -1,51 +1,76 @@
 <?php
-class WPAI_Recipe_Generator_Frontend {
+class WPAI_Recipe_Generator_Frontend
+{
     private static $instance;
     private $assets_enqueued = false;
 
-    public static function get_instance() {
+    public static function get_instance()
+    {
         if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
-    private function __construct() {
+    private function __construct()
+    {
         add_shortcode('WPAI_recipe_generator', [$this, 'recipe_shortcode_handler']);
         add_shortcode('user_saved_recipes', [$this, 'saved_recipes_shortcode_handler']);
         add_shortcode('recipe_user_profile', [$this, 'user_profile_shortcode']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
     }
 
-    public function recipe_shortcode_handler($atts) {
+    public function recipe_shortcode_handler($atts)
+    {
         $this->set_assets_flag();
-        
+
+        if (! WPAI_Recipe_Generator::user_can_generate_recipe()) {
+            // Show login required message instead of the form
+            ob_start();
+?>
+            <div class="wpai-recipe-generator-frontend login-required">
+                <div class="login-notice">
+                    <p><?php esc_html_e('Please log in to generate AI recipes.', 'wpai-recipe-generator'); ?></p>
+                    <a href="<?php echo esc_url(wp_login_url(get_permalink())); ?>" class="button">
+                        <?php esc_html_e('Log In', 'wpai-recipe-generator'); ?>
+                    </a>
+                    <?php if (get_option('users_can_register')) : ?>
+                        <a href="<?php echo esc_url(wp_registration_url()); ?>" class="button">
+                            <?php esc_html_e('Register', 'wpai-recipe-generator'); ?>
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php
+            return ob_get_clean();
+        }
+
         // Your existing shortcode content remains exactly the same
         $prompt_manager = WPAI_Recipe_Generator_Prompt_Manager::get_instance();
         $dietary_options = $prompt_manager->get_dietary_options();
-        
+
         ob_start(); ?>
         <div class="wpai-recipe-generator-frontend">
             <form id="wpai-recipe-generator-form">
                 <?php wp_nonce_field('wp_ai_recipe_generator_frontend_nonce', '_wpnonce'); ?>
-                
+
                 <div class="form-group">
                     <label for="rg-servings"><?php esc_html_e('Servings', 'wpai-recipe-generator'); ?></label>
                     <input type="number" id="rg-servings" name="servings" min="1" max="20" value="2">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="rg-include"><?php esc_html_e('Must Include Ingredients', 'wpai-recipe-generator'); ?></label>
-                    <input type="text" id="rg-include" name="include" 
+                    <input type="text" id="rg-include" name="include"
                         placeholder="<?php esc_attr_e('e.g., chicken, potatoes', 'wpai-recipe-generator'); ?>">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="rg-exclude"><?php esc_html_e('Must Exclude Ingredients', 'wpai-recipe-generator'); ?></label>
-                    <input type="text" id="rg-exclude" name="exclude" 
+                    <input type="text" id="rg-exclude" name="exclude"
                         placeholder="<?php esc_attr_e('e.g., nuts, dairy', 'wpai-recipe-generator'); ?>">
                 </div>
-                
+
                 <?php if (!empty($dietary_options)) : ?>
                     <div class="form-group">
                         <h3><?php esc_html_e('Dietary Requirements', 'wpai-recipe-generator'); ?></h3>
@@ -59,52 +84,53 @@ class WPAI_Recipe_Generator_Frontend {
                         </div>
                     </div>
                 <?php endif; ?>
-                
+
                 <div class="form-buttons">
-                   <button type="submit" id="generate-btn" class="rg-submit wp-element-button">
-                    <span class="dashicons dashicons-food"></span>
-                    <?php esc_html_e('Generate Recipe', 'wpai-recipe-generator'); ?>
+                    <button type="submit" id="generate-btn" class="rg-submit wp-element-button">
+                        <span class="dashicons dashicons-food"></span>
+                        <?php esc_html_e('Generate Recipe', 'wpai-recipe-generator'); ?>
                     </button>
                     <button type="button" id="reset-form-btn" class="rg-submit secondary">
                         <span class="dashicons dashicons-update"></span> Reset Form
                     </button>
                 </div>
-                
-                
+
+
                 <div class="rg-loading" style="display:none;">
                     <div class="rg-spinner"></div>
                     <p class="loading-text">Crafting your perfect recipe...</p>
                 </div>
             </form>
-            
+
             <div id="recipe-results" style="display:none;"></div>
             <div id="recipe-actions" style="display:none;">
                 <button id="save-recipe-btn" class="rg-submit wp-element-button">Save to Favorites</button>
                 <span id="save-status"></span>
             </div>
         </div>
-        <?php
+    <?php
         return ob_get_clean();
     }
 
-    public function saved_recipes_shortcode_handler($atts) {
+    public function saved_recipes_shortcode_handler($atts)
+    {
         $this->set_assets_flag();
-        
-        if (!is_user_logged_in()) {
-            return '<p>Please log in to view your saved recipes.</p>';
+
+        if (! WPAI_Recipe_Generator::user_can_access_saved_recipes()) {
+            return '<p>Please <a href="' . esc_url(wp_login_url(get_permalink())) . '">log in</a> to view your saved recipes.</p>';
         }
-        
+
         $saved_recipes = get_user_meta(get_current_user_id(), 'ai_saved_recipes', true) ?: [];
         $recipe_count = count($saved_recipes);
-        
+
         if (empty($saved_recipes)) {
             return '<p>You have no saved recipes yet.</p>';
         }
 
         ob_start(); ?>
         <div class="user-saved-recipes">
-            <h3>Your Saved Recipes <span class="recipe-count">(<?php echo esc_html( $recipe_count ); ?>)</span></h3>
-            
+            <h3>Your Saved Recipes <span class="recipe-count">(<?php echo esc_html($recipe_count); ?>)</span></h3>
+
             <?php if ($recipe_count > 0) : ?>
                 <ul class="saved-recipes-list">
                     <?php foreach ($saved_recipes as $recipe_id => $recipe) : ?>
@@ -124,7 +150,7 @@ class WPAI_Recipe_Generator_Frontend {
         <!-- Modal Structure -->
         <div id="recipe-modal" class="recipe-modal" style="display:none;">
             <div class="modal-content">
-                
+
                 <div class="modal-actions">
                     <button class="modal-action share-recipe" title="Share Recipe">
                         <span class="dashicons dashicons-share"></span> Share
@@ -174,9 +200,10 @@ class WPAI_Recipe_Generator_Frontend {
         return ob_get_clean();
     }
 
-    public function user_profile_shortcode($atts) {
+    public function user_profile_shortcode($atts)
+    {
         $this->set_assets_flag();
-        
+
         $atts = shortcode_atts([
             'show_avatar' => true,
             'show_name'   => true,
@@ -185,17 +212,18 @@ class WPAI_Recipe_Generator_Frontend {
         ], $atts, 'recipe_user_profile');
 
         ob_start();
-        
+
+        // UPDATED CHECK - Shows profile only if logged in
         if (is_user_logged_in()) {
             $current_user = wp_get_current_user();
-            ?>
+        ?>
             <div class="wpai-recipe-generator-user-profile">
                 <?php if ($atts['show_avatar']) : ?>
                     <div class="user-avatar">
                         <?php echo get_avatar($current_user->ID, (int)$atts['avatar_size']); ?>
                     </div>
                 <?php endif; ?>
-                
+
                 <?php if ($atts['show_name']) : ?>
                     <div class="user-info">
                         <span class="user-display-name">Welcome <?php echo esc_html($current_user->display_name); ?></span>
@@ -207,52 +235,57 @@ class WPAI_Recipe_Generator_Frontend {
                     </div>
                 <?php endif; ?>
             </div>
-            <?php
+        <?php
         } elseif ($atts['show_login']) {
-            ?>
+        ?>
             <div class="wpai-recipe-generator-user-profile">
                 <a href="<?php echo esc_url(wp_login_url()); ?>" class="login-link">
                     <?php esc_html_e('Log In', 'wpai-recipe-generator'); ?>
                 </a>
             </div>
-            <?php
+<?php
         }
-        
+
         return ob_get_clean();
     }
 
-    private function set_assets_flag() {
+    private function set_assets_flag()
+    {
         $this->assets_enqueued = true;
     }
 
-    public function enqueue_assets() {
+    public function enqueue_assets()
+    {
         global $post;
-        
+
         // Check if we've processed shortcodes
         if ($this->assets_enqueued) {
             $this->do_enqueue_assets();
             return;
         }
-        
+
         // Fallback check for posts/pages
         if (is_a($post, 'WP_Post')) {
-            if (has_shortcode($post->post_content, 'WPAI_recipe_generator') || 
-               has_shortcode($post->post_content, 'user_saved_recipes')) {
+            if (
+                has_shortcode($post->post_content, 'WPAI_recipe_generator') ||
+                has_shortcode($post->post_content, 'user_saved_recipes')
+            ) {
                 $this->do_enqueue_assets();
             }
         }
     }
 
-    private function do_enqueue_assets() {
+    private function do_enqueue_assets()
+    {
         if (did_action('wp_enqueue_scripts') !== 1) return;
-        
+
         wp_enqueue_style(
             'wpai-recipe-generator-frontend',
             WPAI_RECIPE_GENERATOR_URL . 'assets/css/frontend.min.css',
             [],
             WPAI_RECIPE_GENERATOR_VERSION
         );
-        
+
         wp_enqueue_script(
             'wpai-recipe-generator-frontend',
             WPAI_RECIPE_GENERATOR_URL . 'assets/js/frontend.js',
@@ -260,7 +293,7 @@ class WPAI_Recipe_Generator_Frontend {
             WPAI_RECIPE_GENERATOR_VERSION,
             true
         );
-        
+
         wp_localize_script(
             'wpai-recipe-generator-frontend',
             'recipeGeneratorFrontendVars',

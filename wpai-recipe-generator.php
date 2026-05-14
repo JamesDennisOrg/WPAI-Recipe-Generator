@@ -3,7 +3,7 @@
  * Plugin Name: WPAI Recipe Generator
  * Plugin URI: https://jamesdennis.org/wpai-recipe-generator.html
  * Description: ✨ AI-Powered Recipe Generation - Transform your food blog — SEO-optimized recipes in seconds! Perfect for bloggers, chefs, and content creators.
- * Version: 1.2.1
+ * Version: 1.3.0
  * Author: James Dennis
  * Author URI: https://jamesdennis.org
  * License: GPL v3.0
@@ -14,7 +14,7 @@
 defined('ABSPATH') || exit;
 
 // Define plugin constants
-define('WPAI_RECIPE_GENERATOR_VERSION', '1.2.1');
+define('WPAI_RECIPE_GENERATOR_VERSION', '1.3.0');
 define('WPAI_RECIPE_GENERATOR_PATH', plugin_dir_path(__FILE__));
 define('WPAI_RECIPE_GENERATOR_URL', plugin_dir_url(__FILE__));
 define('WPAI_RECIPE_GENERATOR_TEMPLATES_PATH', WPAI_RECIPE_GENERATOR_PATH . 'templates/');
@@ -234,10 +234,41 @@ class WPAI_Recipe_Generator {
         );
 
     }
+
+    /**
+     * Check if current user can generate recipes based on admin settings
+     * 
+     * @return bool True if user can generate, false otherwise
+     */
+    public static function user_can_generate_recipe()
+    {
+        $require_login = get_option('wpai_require_login', true);
+
+        // If admin disabled login requirement, everyone can generate
+        if (! $require_login) {
+            return true;
+        }
+
+        // Otherwise, require logged-in user
+        return is_user_logged_in();
+    }
+
+    /**
+     * Check if current user can save/view saved recipes
+     * 
+     * @return bool True if user can access saved recipes, false otherwise
+     */
+    public static function user_can_access_saved_recipes()
+    {
+        // Saved recipes always require login (since they're user-specific)
+        return is_user_logged_in();
+    }
 }
 
 // Initialize the plugin
 WPAI_Recipe_Generator::get_instance();
+
+
 
 register_activation_hook(__FILE__, function() {
     WPAI_Recipe_Generator::get_instance()->register_post_types();
